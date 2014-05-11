@@ -1,6 +1,7 @@
 import datetime
 import json
 import requests
+import sys
 import urllib.parse
 
 import config
@@ -41,11 +42,19 @@ def fill_url(url):
 def get_daily_miles(access_token, date):
 	url = API_ENDPOINT + "user/summary/daily/{}".format(date.isoformat())
 	r = requests.get(url, headers={"Authorization": "Bearer " + access_token})
-	json = r.json()
+
+	try:
+		json = r.json()
+	except ValueError as v:
+		print("unable to decode JSON, response:")
+		print("\t{}".format(r.text))
+		raise
+
 	dist = 0
 
 	for summary in json[0]["summary"]:
-		dist += summary["distance"]
+		if summary["activity"] in ("walking", "running"):
+			dist += summary["distance"]
 
 	return meters_to_miles(dist)
 
